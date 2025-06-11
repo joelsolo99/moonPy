@@ -27,9 +27,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install pyinstaller pyqt5 opencv-python-headless
 
-      - name: Build executable
-        shell: ${{ runner.os == 'Windows' && 'pwsh' || 'bash' }}
-        run: ${{ runner.os == 'Windows' && '
+      - name: Build executable on Windows
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
           pyinstaller moonPy.py `
             --name moonPy `
             --onefile `
@@ -43,7 +44,11 @@ jobs:
             --hidden-import=PyQt5.QtPrintSupport `
             --hidden-import=cv2 `
             --exclude-module=PySide6
-          ' || '
+
+      - name: Build executable on macOS
+        if: matrix.os == 'macos-latest'
+        shell: bash
+        run: |
           pyinstaller moonPy.py \
             --name moonPy \
             --onefile \
@@ -57,11 +62,28 @@ jobs:
             --hidden-import=PyQt5.QtPrintSupport \
             --hidden-import=cv2 \
             --exclude-module=PySide6
-          ' }}
+
+      - name: Build executable on Linux
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          pyinstaller moonPy.py \
+            --name moonPy \
+            --onefile \
+            --windowed \
+            --noconfirm \
+            --clean \
+            --paths=. \
+            --hidden-import=PyQt5.QtCore \
+            --hidden-import=PyQt5.QtGui \
+            --hidden-import=PyQt5.QtWidgets \
+            --hidden-import=PyQt5.QtPrintSupport \
+            --hidden-import=cv2 \
+            --exclude-module=PySide6
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: moonPy-${{ matrix.os }}
-          path: ${{ runner.os == 'Windows' && 'dist/moonPy.exe' || 'dist/moonPy' }}
+          path: ${{ matrix.os == 'windows-latest' && 'dist/moonPy.exe' || 'dist/moonPy' }}
 
