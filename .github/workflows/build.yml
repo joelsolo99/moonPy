@@ -1,4 +1,4 @@
-name: Builname: Build
+name: Build Executable
 
 on:
   push:
@@ -25,11 +25,25 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pyinstaller pyqt5 opencv-python
-          
+          pip install pyinstaller pyqt5 opencv-python-headless
+
       - name: Build executable
-        shell: bash
-        run: |
+        shell: ${{ runner.os == 'Windows' && 'pwsh' || 'bash' }}
+        run: ${{ runner.os == 'Windows' && '
+          pyinstaller moonPy.py `
+            --name moonPy `
+            --onefile `
+            --windowed `
+            --noconfirm `
+            --clean `
+            --paths=. `
+            --hidden-import=PyQt5.QtCore `
+            --hidden-import=PyQt5.QtGui `
+            --hidden-import=PyQt5.QtWidgets `
+            --hidden-import=PyQt5.QtPrintSupport `
+            --hidden-import=cv2 `
+            --exclude-module=PySide6
+          ' || '
           pyinstaller moonPy.py \
             --name moonPy \
             --onefile \
@@ -43,10 +57,11 @@ jobs:
             --hidden-import=PyQt5.QtPrintSupport \
             --hidden-import=cv2 \
             --exclude-module=PySide6
+          ' }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: moonPy-${{ matrix.os }}
-          path: dist/moonPy${{ runner.os == 'Windows' && '.exe' || '' }}
+          path: ${{ runner.os == 'Windows' && 'dist/moonPy.exe' || 'dist/moonPy' }}
 
