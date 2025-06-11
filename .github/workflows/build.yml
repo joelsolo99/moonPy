@@ -1,73 +1,75 @@
-name: Build moonPy for All Platforms
+name: Build moonPy executables
 
 on:
   push:
     tags:
-      - 'v*'  # Only build when you push a version tag like v1.0.0
-  workflow_dispatch:  # Also allow manual runs
+      - 'v*'
+  workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-
+  build-linux:
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: 3.12
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pyinstaller PyQt5
+        run: pip install pyinstaller PyQt5
 
-      - name: Build with PyInstaller (Linux & macOS)
-        if: matrix.os != 'windows-latest'
-        run: |
-          pyinstaller moonPy.py \
-            --name moonPy \
-            --onefile \
-            --windowed \
-            --noconfirm \
-            --clean \
-            --paths=. \
-            --hidden-import=PyQt5.QtCore \
-            --hidden-import=PyQt5.QtGui \
-            --hidden-import=PyQt5.QtWidgets \
-            --hidden-import=PyQt5.QtPrintSupport \
-            --exclude-module=PySide6
-
-      - name: Build with PyInstaller (Windows)
-        if: matrix.os == 'windows-latest'
+      - name: Build executable
         run: pyinstaller moonPy.py --name moonPy --onefile --windowed --noconfirm --clean --paths=. --hidden-import=PyQt5.QtCore --hidden-import=PyQt5.QtGui --hidden-import=PyQt5.QtWidgets --hidden-import=PyQt5.QtPrintSupport --exclude-module=PySide6
 
-      - name: Upload build artifact
+      - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
         with:
-          name: moonPy-${{ matrix.os }}
-          path: dist/moonPy*
+          name: moonPy-linux
+          path: dist/moonPy
 
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
+  build-macos:
+    runs-on: macos-latest
     steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: ./artifacts
+      - uses: actions/checkout@v4
 
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          name: Release ${{ github.ref_name }}
-          tag_name: ${{ github.ref_name }}
-          files: ./artifacts/**/*
+          python-version: 3.12
 
+      - name: Install dependencies
+        run: pip install pyinstaller PyQt5
+
+      - name: Build executable
+        run: pyinstaller moonPy.py --name moonPy --onefile --windowed --noconfirm --clean --paths=. --hidden-import=PyQt5.QtCore --hidden-import=PyQt5.QtGui --hidden-import=PyQt5.QtWidgets --hidden-import=PyQt5.QtPrintSupport --exclude-module=PySide6
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: moonPy-macos
+          path: dist/moonPy
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+
+      - name: Install dependencies
+        run: pip install pyinstaller PyQt5
+
+      - name: Build executable
+        run: pyinstaller moonPy.py --name moonPy --onefile --windowed --noconfirm --clean --paths=. --hidden-import=PyQt5.QtCore --hidden-import=PyQt5.QtGui --hidden-import=PyQt5.QtWidgets --hidden-import=PyQt5.QtPrintSupport --exclude-module=PySide6
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: moonPy-windows
+          path: dist/moonPy.exe
 
