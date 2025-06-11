@@ -1,34 +1,32 @@
-name: Build moonPy executables
+name: Build
 
 on:
   push:
     branches:
       - main
   pull_request:
-    branches:
-      - main
 
 jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
-        python-version: [3.12]
+        os: [windows-latest, macos-latest, ubuntu-latest]
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: '3.12'
 
     - name: Install dependencies
-      run: pip install --upgrade pip pyinstaller PyQt5
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller PyQt5 opencv-python
 
-    - name: Build executable with PyInstaller
+    - name: Build executable
       run: |
         pyinstaller moonPy.py \
           --name moonPy \
@@ -41,26 +39,12 @@ jobs:
           --hidden-import=PyQt5.QtGui \
           --hidden-import=PyQt5.QtWidgets \
           --hidden-import=PyQt5.QtPrintSupport \
+          --hidden-import=cv2 \
           --exclude-module=PySide6
 
-    - name: Upload Windows artifact
-      if: matrix.os == 'windows-latest'
+    - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: moonPy-windows.exe
-        path: dist/moonPy.exe
-
-    - name: Upload macOS artifact
-      if: matrix.os == 'macos-latest'
-      uses: actions/upload-artifact@v4
-      with:
-        name: moonPy-macos
-        path: dist/moonPy
-
-    - name: Upload Linux artifact
-      if: matrix.os == 'ubuntu-latest'
-      uses: actions/upload-artifact@v4
-      with:
-        name: moonPy-linux
-        path: dist/moonPy
+        name: moonPy-${{ matrix.os }}
+        path: dist/moonPy${{ matrix.os == 'windows-latest' && '.exe' || '' }}
 
